@@ -24,6 +24,21 @@
 /* #define LOOP_CHANGE_FD	0x4C06 */
 #define LOOP_SET_CAPACITY	0x4C07
 
+/*
+* IOCTL defined for hyperblock --- 
+*/
+
+#define LOOP_SET_FD_MFILE               0x4C10
+#define LOOP_CLR_FD_MFILE               0x4C11
+#define LOOP_SET_STATUS_MFILE           0x4C12
+#define LOOP_GET_STATUS_MFILE           0x4C13
+#define LOOP_SET_STATUS64_MFILE         0x4C14
+#define LOOP_GET_STATUS64_MFILE         0x4C15
+#define LOOP_CHANGE_FD_MFILE            0x4C16
+#define LOOP_SET_CAPACITY_MFILE         0x4C17
+#define LOOP_SET_DIRECT_IO_MFILE        0x4C18
+#define LOOP_SET_BLOCK_SIZE_MFILE       0x4C19
+
 /* /dev/loop-control interface */
 #ifndef LOOP_CTL_ADD
 # define LOOP_CTL_ADD		0x4C80
@@ -44,6 +59,16 @@ enum {
 #define LO_NAME_SIZE	64
 #define LO_KEY_SIZE	32
 
+struct loop_mfile {
+	uint8_t	**filenames;
+	uint8_t	mfcnt;
+};
+
+struct loop_mfile_fds {
+	int * fds;
+	uint8_t mfcnt;
+};
+
 /*
  * Linux LOOP_{SET,GET}_STATUS64 ioctl struct
  */
@@ -58,6 +83,9 @@ struct loop_info64 {
 	uint32_t	lo_encrypt_key_size;
 	uint32_t	lo_flags;
 	uint8_t		lo_file_name[LO_NAME_SIZE];
+	struct	loop_mfile	mfile;	/* for hyperblock, backing multiple file info*/
+	//uint8_t		**lo_file_names;/* for hyperblock, backing file names */
+	//uint8_t		mfcnt;		/* for hyperblock, backing file count */
 	uint8_t		lo_crypt_name[LO_NAME_SIZE];
 	uint8_t		lo_encrypt_key[LO_KEY_SIZE];
 	uint64_t	lo_init[2];
@@ -91,6 +119,9 @@ enum {
 struct loopdev_cxt {
 	char		device[128];	/* device path (e.g. /dev/loop<N>) */
 	char		*filename;	/* backing file for loopcxt_set_... */
+	struct loop_mfile   mfile;
+	//char 		**filenames;	/* for hyperblock, backing files for loopcxt_set_... */
+	//int		mfcnt;		/* for hyperblock, backing files count */
 	int		fd;		/* open(/dev/looo<N>) */
 	int		mode;		/* fd mode O_{RDONLY,RDWR} */
 

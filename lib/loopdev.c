@@ -1082,6 +1082,44 @@ int loopcxt_set_backing_file(struct loopdev_cxt *lc, const char *filename)
 	return 0;
 }
 
+
+/*
+ * @lc: context
+ * @filename: backing file path (the path will be canonicalized)
+ *
+ * The setting is removed by loopcxt_set_device() loopcxt_next()!
+ *
+ * Returns: 0 on success, <0 on error.
+ */
+int loopcxt_set_backing_files(struct loopdev_cxt *lc, size_t fcnt, const char **filenames)
+{
+	printf("loopcxt_set_backing_files\n");
+	if (!lc)
+		return -EINVAL;
+	size_t i;
+	lc->mfile.mfcnt = fcnt;
+	lc->mfile.filenames = (char *)malloc(fcnt* sizeof(char *));
+	lc->info.mfile.mfcnt = fcnt;
+	lc->info.mfile.filenames = (char **)malloc(fcnt*sizeof(char *));
+	for(i=0;i<fcnt;i++){
+
+		lc->mfile.filenames[i] = canonicalize_path(filenames[i]);
+		printf("setting lc->filenames[%d] to %s\n ",i,lc->mfile.filenames[i]);
+		if(!lc->mfile.filenames[i]) return -errno;
+		lc->info.mfile.filenames[i] = (char *)malloc(LO_NAME_SIZE *sizeof(char));
+		strncpy((char *)lc->info.mfile.filenames[i], lc->mfile.filenames[i], LO_NAME_SIZE);
+		lc->info.mfile.filenames[i][LO_NAME_SIZE- 1] = '\0';
+
+		DBG(CXT, ul_debugobj(lc, "set backing file=%s", lc->info.mfile.filenames[i]));
+		printf("setting lc->info.mfile.filenames[%d] to %s\n ",i, lc->info.mfile.filenames[i]);
+
+	}
+
+
+	return 0;
+}
+
+
 /*
  * In kernels prior to v3.9, if the offset or sizelimit options
  * are used, the block device's size won't be synced automatically.
@@ -1296,6 +1334,143 @@ err:
 	DBG(SETUP, ul_debugobj(lc, "failed [rc=%d]", rc));
 	return rc;
 }
+
+/*
+ * @cl: context
+ *
+ * Associate the current device (see loopcxt_{set,get}_device()) with
+ * multiple file (see loopcxt_set_backing_files()).
+ *
+ * The device is initialized read-write by default. If you want read-only
+ * device then set LO_FLAGS_READ_ONLY by loopcxt_set_flags(). The LOOPDEV_FL_*
+ * flags are ignored and modified according to LO_FLAGS_*.
+ *
+ * If the device is already open by loopcxt_get_fd() then this setup device
+ * function will re-open the device to fix read/write mode.
+ *
+ * The device is also initialized read-only if the backing file is not
+ * possible to open read-write (e.g. read-only FS).
+ *
+ * Returns: <0 on error, 0 on success.
+ */
+int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
+{
+	struct loop_mfile_fds mfds;
+
+	mfds.fds = malloc(lc->mfile.mfcnt*sizeof(int));
+	mfds.mfcnt = lc->mfile.mfcnt;
+
+	int dev_fd, mode = O_RDWR, rc = -1, cnt = 0;
+	int errsv = 0;
+	size_t i;
+	if (!lc || !*lc->device || !lc->mfile.filenames)
+		return -EINVAL;
+
+	DBG(SETUP, ul_debugobj(lc, "device setup requested"));
+
+	/*
+	 * Open backing file and device
+	 */
+	if (lc->info.lo_flags & LO_FLAGS_READ_ONLY)
+		mode = O_RDONLY;
+
+	
+	for(i=0;i<lc->mfile.mfcnt;i++){
+		if ((mfds.fds[i]= open(lc->mfile.filenames[i], mode | O_CLOEXEC)) < 0) {
+			if (mode != O_RDONLY && (errno == EROFS || errno == EACCES))
+				mfds.fds[i] = open(lc->mfile.filenames[i], mode = O_RDONLY);
+
+			if (mfds.fds[i] < 0) {
+				DBG(SETUP, ul_debugobj(lc, "open backing file failed: %m"));
+				return -errno;
+			}
+		}
+	}
+	DBG(SETUP, ul_debugobj(lc, "backing file open: OK"));
+
+	if (lc->fd != -1 && lc->mode != mode) {
+		DBG(SETUP, ul_debugobj(lc, "closing already open device (mode mismatch)"));
+		close(lc->fd);
+		lc->fd = -1;
+		lc->mode = 0;
+	}
+
+	if (mode == O_RDONLY) {
+		lc->flags |= LOOPDEV_FL_RDONLY;			/* open() mode */
+		lc->info.lo_flags |= LO_FLAGS_READ_ONLY;	/* kernel loopdev mode */
+	} else {
+		lc->flags |= LOOPDEV_FL_RDWR;			/* open() mode */
+		lc->info.lo_flags &= ~LO_FLAGS_READ_ONLY;
+		lc->flags &= ~LOOPDEV_FL_RDONLY;
+	}
+
+	do {
+		errno = 0;
+		dev_fd = loopcxt_get_fd(lc);
+		if (dev_fd >= 0 || lc->control_ok == 0)
+			break;
+		if (errno != EACCES && errno != ENOENT)
+			break;
+		/* We have permissions to open /dev/loop-control, but open
+		 * /dev/loopN failed with EACCES, it's probably because udevd
+		 * does not applied chown yet. Let's wait a moment. */
+		xusleep(25000);
+	} while (cnt++ < 16);
+
+	if (dev_fd < 0) {
+		rc = -errno;
+		goto err;
+	}
+
+	DBG(SETUP, ul_debugobj(lc, "device open: OK"));
+
+	/*
+	 * Set FD
+	 */
+	if (ioctl(dev_fd, LOOP_SET_FD_MFILE, &mfds) < 0) {
+		rc = -errno;
+		errsv = errno;
+		DBG(SETUP, ul_debugobj(lc, "LOOP_SET_FD_MFILE failed: %m"));
+		goto err;
+	}
+
+	DBG(SETUP, ul_debugobj(lc, "LOOP_SET_FD: OK"));
+
+	if (ioctl(dev_fd, LOOP_SET_STATUS64_MFILE, &lc->info)) {
+		rc = -errno;
+		errsv = errno;
+		DBG(SETUP, ul_debugobj(lc, "LOOP_SET_STATUS64_MFILE failed: %m"));
+		goto err;
+	}
+
+	DBG(SETUP, ul_debugobj(lc, "LOOP_SET_STATUS64_MFILE: OK"));
+
+	// do not check size here because the loop device size is not consistent with file size 
+	// in case of hyperblock
+	//if ((rc = loopcxt_check_size(lc, file_fd)))
+	//	goto err;
+
+	close(file_fd);
+
+	memset(&lc->info, 0, sizeof(lc->info));
+	lc->has_info = 0;
+	lc->info_failed = 0;
+
+	DBG(SETUP, ul_debugobj(lc, "success [rc=0]"));
+	return 0;
+err:
+	if (file_fd >= 0)
+		close(file_fd);
+	if (dev_fd >= 0 && rc != -EBUSY)
+		ioctl(dev_fd, LOOP_CLR_FD_MFILE, 0);
+	if (errsv)
+		errno = errsv;
+
+	DBG(SETUP, ul_debugobj(lc, "failed [rc=%d]", rc));
+	return rc;
+}
+
+
 
 int loopcxt_set_capacity(struct loopdev_cxt *lc)
 {
