@@ -180,3 +180,6 @@ ylwrap
 /wipefs
 /write
 /zramctl
+/debian
+/misc-utils
+/.pc
