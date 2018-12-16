@@ -59,14 +59,15 @@ enum {
 #define LO_NAME_SIZE	64
 #define LO_KEY_SIZE	32
 
+//loop_mfile for  set_status loop_mfile_fds for set_fd
 struct loop_mfile {
-	uint8_t	**filenames;
 	uint8_t	mfcnt;
+	uint8_t	**filenames;
 };
 
 struct loop_mfile_fds {
-	int * fds;
 	uint8_t mfcnt;
+	int fds[0];
 };
 
 /*

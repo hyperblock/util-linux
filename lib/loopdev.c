@@ -1355,10 +1355,10 @@ err:
  */
 int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 {
-	struct loop_mfile_fds mfds;
+	int n = lc->mfile.mfcnt;
+	struct loop_mfile_fds * mfds = (struct loop_mfile_fds *)malloc(sizeof(struct_mfild_fds) + sizeof(int) * n);
 
-	mfds.fds = malloc(lc->mfile.mfcnt*sizeof(int));
-	mfds.mfcnt = lc->mfile.mfcnt;
+	mfds->mfnt = n;
 
 	int dev_fd, mode = O_RDWR, rc = -1, cnt = 0;
 	int errsv = 0;
@@ -1375,12 +1375,12 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 		mode = O_RDONLY;
 
 	
-	for(i=0;i<lc->mfile.mfcnt;i++){
-		if ((mfds.fds[i]= open(lc->mfile.filenames[i], mode | O_CLOEXEC)) < 0) {
+	for(i=0;i<n;i++){
+		if ((mfds->fds[i]= open(lc->mfile.filenames[i], mode | O_CLOEXEC)) < 0) {
 			if (mode != O_RDONLY && (errno == EROFS || errno == EACCES))
-				mfds.fds[i] = open(lc->mfile.filenames[i], mode = O_RDONLY);
+				mfds->fds[i] = open(lc->mfile.filenames[i], mode = O_RDONLY);
 
-			if (mfds.fds[i] < 0) {
+			if (mfds->fds[i] < 0) {
 				DBG(SETUP, ul_debugobj(lc, "open backing file failed: %m"));
 				return -errno;
 			}
@@ -1427,7 +1427,7 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 	/*
 	 * Set FD
 	 */
-	if (ioctl(dev_fd, LOOP_SET_FD_MFILE, &mfds) < 0) {
+	if (ioctl(dev_fd, LOOP_SET_FD_MFILE, mfds) < 0) {
 		rc = -errno;
 		errsv = errno;
 		DBG(SETUP, ul_debugobj(lc, "LOOP_SET_FD_MFILE failed: %m"));
