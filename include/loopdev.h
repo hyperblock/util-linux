@@ -25,7 +25,7 @@
 #define LOOP_SET_CAPACITY	0x4C07
 
 /*
-* IOCTL defined for hyperblock --- 
+* IOCTL defined for hyperblock ---  enabled
 */
 
 #define LOOP_SET_FD_MFILE               0x4C10
@@ -34,6 +34,10 @@
 #define LOOP_GET_STATUS_MFILE           0x4C13
 #define LOOP_SET_STATUS64_MFILE         0x4C14
 #define LOOP_GET_STATUS64_MFILE         0x4C15
+/* 
+* IOCTL defined for hyperblock ---  to appear in new version of util-linux
+* note that following are only defined in kernel for now
+*/
 #define LOOP_CHANGE_FD_MFILE            0x4C16
 #define LOOP_SET_CAPACITY_MFILE         0x4C17
 #define LOOP_SET_DIRECT_IO_MFILE        0x4C18
@@ -84,12 +88,10 @@ struct loop_info64 {
 	uint32_t	lo_encrypt_key_size;
 	uint32_t	lo_flags;
 	uint8_t		lo_file_name[LO_NAME_SIZE];
-	struct	loop_mfile	mfile;	/* for hyperblock, backing multiple file info*/
-	//uint8_t		**lo_file_names;/* for hyperblock, backing file names */
-	//uint8_t		mfcnt;		/* for hyperblock, backing file count */
 	uint8_t		lo_crypt_name[LO_NAME_SIZE];
 	uint8_t		lo_encrypt_key[LO_KEY_SIZE];
 	uint64_t	lo_init[2];
+	struct		loop_mfile	mfile;	/* for hyperblock, backing multiple file info*/
 };
 
 #define LOOPDEV_MAJOR		7	/* loop major number */
