@@ -1093,18 +1093,21 @@ int loopcxt_set_backing_file(struct loopdev_cxt *lc, const char *filename)
  */
 int loopcxt_set_backing_files(struct loopdev_cxt *lc, size_t fcnt, const char **filenames)
 {
+	size_t i;
 	printf("loopcxt_set_backing_files\n");
 	if (!lc)
 		return -EINVAL;
-	size_t i;
+
 	lc->mfile.mfcnt = fcnt;
 	lc->mfile.filenames = (char *)malloc(fcnt* sizeof(char *));
 	lc->info.mfile.mfcnt = fcnt;
 	lc->info.mfile.filenames = (char **)malloc(fcnt*sizeof(char *));
+
 	for(i=0;i<fcnt;i++){
 
 		lc->mfile.filenames[i] = canonicalize_path(filenames[i]);
 		printf("setting lc->filenames[%d] to %s\n ",i,lc->mfile.filenames[i]);
+
 		if(!lc->mfile.filenames[i]) return -errno;
 		lc->info.mfile.filenames[i] = (char *)malloc(LO_NAME_SIZE *sizeof(char));
 		strncpy((char *)lc->info.mfile.filenames[i], lc->mfile.filenames[i], LO_NAME_SIZE);
@@ -1112,9 +1115,7 @@ int loopcxt_set_backing_files(struct loopdev_cxt *lc, size_t fcnt, const char **
 
 		DBG(CXT, ul_debugobj(lc, "set backing file=%s", lc->info.mfile.filenames[i]));
 		printf("setting lc->info.mfile.filenames[%d] to %s\n ",i, lc->info.mfile.filenames[i]);
-
 	}
-
 
 	return 0;
 }

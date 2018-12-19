@@ -122,7 +122,6 @@ enum {
 struct loopdev_cxt {
 	char		device[128];	/* device path (e.g. /dev/loop<N>) */
 	char		*filename;	/* backing file for loopcxt_set_... */
-	struct loop_mfile   mfile;
 	//char 		**filenames;	/* for hyperblock, backing files for loopcxt_set_... */
 	//int		mfcnt;		/* for hyperblock, backing files count */
 	int		fd;		/* open(/dev/looo<N>) */
@@ -137,6 +136,7 @@ struct loopdev_cxt {
 	struct sysfs_cxt	sysfs;	/* pointer to /sys/dev/block/<maj:min>/ */
 	struct loop_info64	info;	/* for GET/SET ioctl */
 	struct loopdev_iter	iter;	/* scans /sys or /dev for used/free devices */
+	struct loop_mfile   mfile;
 };
 
 #define UL_LOOPDEVCXT_EMPTY { .fd = -1, .sysfs = UL_SYSFSCXT_EMPTY }
