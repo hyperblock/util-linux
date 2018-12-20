@@ -3476,6 +3476,7 @@ LN_S = @LN_S@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -3592,6 +3593,7 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 pyexecdir = @pyexecdir@
 pythondir = @pythondir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -4727,7 +4729,7 @@ test_sigreceive_LDADD = $(LDADD) libcommon.la
 test_uuidd_SOURCES = tests/helpers/test_uuidd.c
 test_uuidd_LDADD = $(LDADD) libcommon.la libuuid.la -lpthread
 test_uuidd_CFLAGS = $(AM_CFLAGS) -I$(ul_libuuid_incdir)
-TS_OPTS = --nonroot
+TS_OPTS = --nonroot --verbose
 TS_COMMAND = $(top_srcdir)/tests/run.sh \
 	--srcdir=$(abs_top_srcdir) --builddir=$(abs_top_builddir) \
 	--parallel $(TS_OPTS)
@@ -4753,6 +4755,7 @@ edit_cmd = sed \
 	 -e 's|@usrlib_execdir[@]|$(usrlib_execdir)|g' \
 	 -e 's|@usrbin_execdir[@]|$(usrbin_execdir)|g' \
 	 -e 's|@usrsbin_execdir[@]|$(usrsbin_execdir)|g' \
+	 -e 's|@libexecdir[@]|$(libexecdir)|g' \
 	 -e 's|@VERSION[@]|$(VERSION)|g' \
 	 -e 's|@ADJTIME_PATH[@]|$(ADJTIME_PATH)|g' \
 	 -e 's|@LIBUUID_VERSION[@]|$(LIBUUID_VERSION)|g' \

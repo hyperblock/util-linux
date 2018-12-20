@@ -1357,9 +1357,9 @@ err:
 int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 {
 	int n = lc->mfile.mfcnt;
-	struct loop_mfile_fds * mfds = (struct loop_mfile_fds *)malloc(sizeof(struct_mfild_fds) + sizeof(int) * n);
+	struct loop_mfile_fds * mfds = (struct loop_mfile_fds *)malloc(sizeof(struct loop_mfile_fds) + sizeof(int) * n);
 
-	mfds->mfnt = n;
+	mfds->mfcnt = n;
 
 	int dev_fd, mode = O_RDWR, rc = -1, cnt = 0;
 	int errsv = 0;
@@ -1450,9 +1450,11 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 	// in case of hyperblock
 	//if ((rc = loopcxt_check_size(lc, file_fd)))
 	//	goto err;
-
-	close(file_fd);
-
+	
+	for(i=0;i<n;i++){
+		close(mfds->fds[i]);
+	}
+	free(mfds);	
 	memset(&lc->info, 0, sizeof(lc->info));
 	lc->has_info = 0;
 	lc->info_failed = 0;
@@ -1460,8 +1462,11 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 	DBG(SETUP, ul_debugobj(lc, "success [rc=0]"));
 	return 0;
 err:
-	if (file_fd >= 0)
-		close(file_fd);
+	for(i=0;i<n;i++){
+		close(mfds->fds[i]);
+	}
+	free(mfds);	
+
 	if (dev_fd >= 0 && rc != -EBUSY)
 		ioctl(dev_fd, LOOP_CLR_FD_MFILE, 0);
 	if (errsv)
@@ -1470,7 +1475,6 @@ err:
 	DBG(SETUP, ul_debugobj(lc, "failed [rc=%d]", rc));
 	return rc;
 }
-
 
 
 int loopcxt_set_capacity(struct loopdev_cxt *lc)

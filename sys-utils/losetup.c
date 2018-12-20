@@ -27,6 +27,11 @@
 #include "canonicalize.h"
 #include "pathnames.h"
 
+#define INFO(msg) \
+    fprintf(stderr, "info: %s:%d: ", __FILE__, __LINE__); \
+    fprintf(stderr, "%s", msg);
+
+
 enum {
 	A_CREATE = 1,		/* setup a new device */
 	A_CREATE_MULTI,		/* for hyperblock, create a new device based on multiple files*/
@@ -750,15 +755,17 @@ int main(int argc, char **argv)
 				loopcxt_set_sizelimit(&lc, sizelimit);
 			if (lo_flags)
 				loopcxt_set_flags(&lc, lo_flags);
+			
+			INFO("HERE");
 			if ((res = loopcxt_set_backing_files(&lc, F_CNT, files))) {
 				warn(_("%s: failed to use backing file"), file);
 				break;
 			}
-
-
-		err(EXIT_FAILURE, _("Abort here to debug ..."));
+			INFO("HERE");
+			//err(EXIT_FAILURE, _("Abort here to debug ..."));
 			errno = 0;
 			res = loopcxt_setup_device_mfile(&lc);
+			INFO("HERE");
 			if (res == 0)
 				break;			/* success */
 			if (errno == EBUSY && !hasdev)
@@ -772,12 +779,13 @@ int main(int argc, char **argv)
 		} while (hasdev == 0);
 
 		/* Taking care of mem used in hyperblock multi file */	
-		for(i=0;i<fcnt;i++){
-			free(lc->info.lo_file_names[i]);
-			free(lc->filenames[i]);
+		int i;
+		for(i=0;i<F_CNT;i++){
+			free(lc.info.mfile.filenames[i]);
+			free(lc.mfile.filenames[i]);
 		}	
-		free(lc->info.lo_file_names);
-		free(lc->filenames);
+		free(lc.info.mfile.filenames);
+		free(lc.mfile.filenames);
 
 		if (res == 0) {
 			if (showdev)
