@@ -1428,6 +1428,7 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 	/*
 	 * Set FD
 	 */
+	DBG(SETUP, ul_debugobj(lc, "BEFORE LOOP_SET_FD_MFILE"));
 	if (ioctl(dev_fd, LOOP_SET_FD_MFILE, mfds) < 0) {
 		rc = -errno;
 		errsv = errno;
@@ -1435,7 +1436,7 @@ int loopcxt_setup_device_mfile(struct loopdev_cxt *lc)
 		goto err;
 	}
 
-	DBG(SETUP, ul_debugobj(lc, "LOOP_SET_FD: OK"));
+	DBG(SETUP, ul_debugobj(lc, "LOOP_SET_FD_MFILE: OK"));
 
 	if (ioctl(dev_fd, LOOP_SET_STATUS64_MFILE, &lc->info)) {
 		rc = -errno;

@@ -183,3 +183,7 @@ ylwrap
 /debian
 /misc-utils
 /.pc
+/debian
+/po
+*.in
+
