@@ -756,37 +756,42 @@ int main(int argc, char **argv)
 			if (lo_flags)
 				loopcxt_set_flags(&lc, lo_flags);
 			
-			INFO("HERE");
+			INFO("HERE\n");
 			if ((res = loopcxt_set_backing_files(&lc, F_CNT, files))) {
 				warn(_("%s: failed to use backing file"), file);
 				break;
 			}
-			INFO("HERE");
+			INFO("HERE\n");
 			//err(EXIT_FAILURE, _("Abort here to debug ..."));
 			errno = 0;
 			res = loopcxt_setup_device_mfile(&lc);
-			INFO("HERE");
+			INFO("HERE\n");
 			if (res == 0)
 				break;			/* success */
 			if (errno == EBUSY && !hasdev)
 				continue;
 
+			//err(EXIT_FAILURE, _("Abort here to debug ..."));
 			/* errors */
 			errpre = hasdev && loopcxt_get_fd(&lc) < 0 ?
 					 loopcxt_get_device(&lc) : file;
 			warn(_("%s: failed to set up loop device"), errpre);
+			INFO("HERE\n");
 			break;
 		} while (hasdev == 0);
 
+			INFO("HERE\n");
 		/* Taking care of mem used in hyperblock multi file */	
 		int i;
 		for(i=0;i<F_CNT;i++){
 			free(lc.info.mfile.filenames[i]);
-			free(lc.mfile.filenames[i]);
+			//free(lc.mfile.filenames[i]);
 		}	
+			INFO("HERE\n");
 		free(lc.info.mfile.filenames);
 		free(lc.mfile.filenames);
 
+			INFO("HERE\n");
 		if (res == 0) {
 			if (showdev)
 				printf("%s\n", loopcxt_get_device(&lc));

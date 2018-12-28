@@ -1099,14 +1099,14 @@ int loopcxt_set_backing_files(struct loopdev_cxt *lc, size_t fcnt, const char **
 		return -EINVAL;
 
 	lc->mfile.mfcnt = fcnt;
-	lc->mfile.filenames = (char *)malloc(fcnt* sizeof(char *));
+	lc->mfile.filenames = (char **)malloc(fcnt* sizeof(char *));
 	lc->info.mfile.mfcnt = fcnt;
 	lc->info.mfile.filenames = (char **)malloc(fcnt*sizeof(char *));
 
 	for(i=0;i<fcnt;i++){
 
 		lc->mfile.filenames[i] = canonicalize_path(filenames[i]);
-		printf("setting lc->filenames[%d] to %s\n ",i,lc->mfile.filenames[i]);
+		DBG(CXT, ul_debugobj(lc, "setting lc->filenames[%d] to %s\n ",i,lc->mfile.filenames[i]));
 
 		if(!lc->mfile.filenames[i]) return -errno;
 		lc->info.mfile.filenames[i] = (char *)malloc(LO_NAME_SIZE *sizeof(char));
@@ -1114,7 +1114,10 @@ int loopcxt_set_backing_files(struct loopdev_cxt *lc, size_t fcnt, const char **
 		lc->info.mfile.filenames[i][LO_NAME_SIZE- 1] = '\0';
 
 		DBG(CXT, ul_debugobj(lc, "set backing file=%s", lc->info.mfile.filenames[i]));
-		printf("setting lc->info.mfile.filenames[%d] to %s\n ",i, lc->info.mfile.filenames[i]);
+		DBG(CXT, ul_debugobj(lc, "setting lc->info.mfile.filenames[%d] to %s\n ",i, lc->info.mfile.filenames[i]));
+		DBG(CXT, ul_debugobj(lc, "setting lc->info.mfile.filenames[%d] to %lx\n ",i, lc->info.mfile.filenames[i]));
+		DBG(CXT, ul_debugobj(lc, "addr of info.mfile.filenames[%d] is %lx\n ",i, &lc->info.mfile.filenames[i]));
+		DBG(CXT, ul_debugobj(lc, "info.mfile.filenames is %lx\n ",lc->info.mfile.filenames));
 	}
 
 	return 0;
