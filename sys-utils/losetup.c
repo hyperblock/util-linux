@@ -771,7 +771,7 @@ int main(int argc, char **argv)
 			if (errno == EBUSY && !hasdev)
 				continue;
 
-			//err(EXIT_FAILURE, _("Abort here to debug ..."));
+			err(EXIT_FAILURE, _("Abort here to debug ..."));
 			/* errors */
 			errpre = hasdev && loopcxt_get_fd(&lc) < 0 ?
 					 loopcxt_get_device(&lc) : file;
