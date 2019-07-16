@@ -188,3 +188,5 @@ ylwrap
 *.in
 /.pc
 tailf
+tests/output
+tests/diff

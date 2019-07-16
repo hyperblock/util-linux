@@ -159,7 +159,7 @@ int loopcxt_init(struct loopdev_cxt *lc, int flags)
 
 	if (!lc)
 		return -EINVAL;
-
+	
 	loopdev_init_debug();
 	DBG(CXT, ul_debugobj(lc, "initialize context"));
 
@@ -189,6 +189,10 @@ int loopcxt_init(struct loopdev_cxt *lc, int flags)
 		lc->flags |= LOOPDEV_FL_CONTROL;
 		DBG(CXT, ul_debugobj(lc, "init: loop-control detected "));
 	}
+
+
+	//to mark the exist of mfile
+	lc->mfile.mfcnt=-1;
 
 	return 0;
 }
@@ -1502,13 +1506,25 @@ int loopcxt_set_capacity(struct loopdev_cxt *lc)
 int loopcxt_delete_device(struct loopdev_cxt *lc)
 {
 	int fd = loopcxt_get_fd(lc);
-
+	printf("fd is %d \n",fd);
 	if (fd < 0)
 		return -EINVAL;
-
-	if (ioctl(fd, LOOP_CLR_FD, 0) < 0) {
-		DBG(CXT, ul_debugobj(lc, "LOOP_CLR_FD failed: %m"));
-		return -errno;
+	printf("1\n");
+	if(lc->mfile.mfcnt!=-1){
+		printf("2\n");
+		if (ioctl(fd, LOOP_CLR_FD_MFILE, 0) < 0) {
+			DBG(CXT, ul_debugobj(lc, "LOOP_CLR_FD_MFILE failed: %m"));
+			return -errno;
+		}
+		printf("3\n");
+	}
+	else {
+		printf("4\n");
+		if (ioctl(fd, LOOP_CLR_FD, 0) < 0) {
+			DBG(CXT, ul_debugobj(lc, "LOOP_CLR_FD failed: %m"));
+			return -errno;
+		}
+		printf("5\n");
 	}
 
 	DBG(CXT, ul_debugobj(lc, "device removed"));

@@ -760,11 +760,11 @@ int main(int argc, char **argv)
 				warn(_("%s: failed to use backing file"), file);
 				break;
 			}
-			INFO("HERE\n");
+			INFO("Before loopcxt_setup_device_mfile \n");
 			//err(EXIT_FAILURE, _("Abort here to debug ..."));
 			errno = 0;
 			res = loopcxt_setup_device_mfile(&lc);
-			INFO("HERE\n");
+			INFO("After loopcxt_setup_device_mfile \n");
 			if (res == 0)
 				break;			/* success */
 			if (errno == EBUSY && !hasdev)
