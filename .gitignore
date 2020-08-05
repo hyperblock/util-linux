@@ -67,6 +67,7 @@ ylwrap
 #
 /addpart
 /agetty
+/build
 /blkdiscard
 /blkzone
 /blkid
